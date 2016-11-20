@@ -1,0 +1,16 @@
+Page one of instructions here, to be replaced with new instructions later.
+
+This text should appear in a new paragraph.
+***
+Second page of instructions,\nwith a single line break to test that the newline symbol works.
+***
+Some intermediate instructions, between the practice trials and experimental trials.
+
+Press any key to continue.
+***
+Some instructions for between blocks. This is block %%%.
+
+Press any key to continue.
+***
+Page of instructions at the end of the experiment.
+***

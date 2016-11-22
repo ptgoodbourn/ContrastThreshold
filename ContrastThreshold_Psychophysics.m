@@ -21,18 +21,23 @@ addpath(genpath(directory.base));                       % Add directories to the
 %% Define experiment parameters
 experiment.instructionFile = 'Instructions_CTP.txt';
 experiment.skipInstructions = 1;
+experiment.skipPractice = 1;
+experiment.nBlocks = 8;
 
 %% Define display parameters
-display.gamma = [1.0 1.0 1.0];                                  % Display gamma (RGB)
-display.geometryCalibration = 'BVLCalibdata_0_1280_800.mat';    % Filename for geometry calibration fil in directory.calibration
+display.gamma = 1.0;                                            % Gamma correction: Gamma (encoding)
+display.minL = 0.0;                                             % Gamma correction: Minimum intensity
+display.maxL = 1.0;                                             % Gamma correction: Maximum intensity
+display.gain = 1.0;                                             % Gamma correction: Gain
+display.bias = 0.0;                                             % Gamma correction: Bias
+display.geometryCalibration = 'BVLCalibdata_0_1280_800.mat';    % Filename for geometry calibration file in directory.calibration
 display.refreshRate_Hz = 100;                                   % Display refresh rate (Hz)
 display.spatialResolution_ppm = 4400;                           % Display spatial resolution (pixels per m)
 display.viewingDistance_m = 0.5;                                % Viewing distance (m)
 display.width_m = 0.3;                                          % Width of the display (m)
-display.screenNo = 0;                                           % Screen number
+display.screenNo = max(Screen('Screens'));                      % Screen number
 display.dummyMode = 1;                                          % Set to 1 to run without DATAPixx and skip sync tests
 display.backgroundVal = 0.5;                                    % Background luminance in range [0,1]
-display.antialiasingLevel = 8;                                  % Antialiasing (multisampling) level
 
 %% Define other equipment parameters
 equipment.dummyMode = 1;                    % Run with keyboard instead of RESPONSEPixx
@@ -56,7 +61,7 @@ stimulus.spatialFrequencies_cpd = [0.5 2.0 5.0 16.0];   % Spatial frequencies (c
 stimulus.gaussianSD_dva = 1.0;                          % SD of Gaussian window (dva)
 stimulus.gaussianTruncate_SD = 4;                       % Hard truncation of Gaussian window (SD)
 stimulus.eccentricity_dva = 4.0;                        % Eccentricity of stimulus centre (dva)
-stimulus.carrierAngle_rad = 0.0;                        % Angle of grating carrier vector (rad)
+stimulus.carrierAngle_rad = pi*0.5;                     % Angle of grating carrier vector (rad)
 stimulus.positions_rad = pi*[0.0 1.5 1.0 0.5];          % Stimulus positions (on imaginary circle). Use this variable to set the number of alternatives.
 stimulus.fixationSubtense_dva = 0.4;                    % Subtense of outer segment of the fixation marker (dva)
 stimulus.fixationLineWidth_pix = 4;                     % Line width of fixation crosshairs (pixels)
@@ -84,6 +89,14 @@ experiment.nAFC = numel(stimulus.positions_rad);                                
 experiment.instructionFile = [directory.auxiliary experiment.instructionFile];                                      % Convert to absolute path
 experiment.nExperimentalTrials = staircase.trialsPerStaircase * staircase.nPerFrequency * experiment.nFrequencies;  % Calculate total number of trials in the experiment
 experiment.nPracticeTrials = staircase.trialsPerStaircase * staircase.nPerFrequency;                                % Calculate total number of practice trials
+experiment.nTrialsPerBlock = experiment.nExperimentalTrials/experiment.nBlocks;
+
+if round(experiment.nTrialsPerBlock)==experiment.nTrialsPerBlock
+    experiment.nTrialsPerBlock = experiment.nTrialsPerBlock * ones(1,experiment.nBlocks);
+else
+    experiment.nTrialsPerBlock = round(experiment.nTrialsPerBlock) * ones(1,experiment.nBlocks-1);
+    experiment.nTrialsPerBlock = [(experiment.nExperimentalTrials-sum(experiment.nTrialsPerBlock)) experiment.nTrialsPerBlock];
+end
 
 staircase.gamma = 1/experiment.nAFC;                                                        % Staircase guess rate
 staircase.nStaircases = staircase.nPerFrequency * experiment.nFrequencies;                  % Total number of independent staircases
@@ -135,92 +148,152 @@ stimulus.centres_y = tempy' + display.centre(2);
     end
     
     %% Start practice block
-    % Practice block uses windowed 1/f noise
-    gaussMask = makeGaussianBlob(stimulus.gaussianSD_pix, stimulus.textureSupport_pix);
     fixationElements = prepareFixationElements(stimulus.fixationSubtense_pix, display.centre, round(rand), stimulus.fixationLineWidth_pix);
-    
-    % Make a dummy texture to get the correct rect dimensions
-    dummyFrame = Screen('MakeTexture', display.ptbWindow, gaussMask, [], [], 2);
-    stimRect = Screen('Rect', dummyFrame);
-    allRects = CenterRectOnPointd(stimRect,stimulus.centres_x,stimulus.centres_y);
-    Screen('Close', dummyFrame);
-    
-    for thisTrial = 1:experiment.nPracticeTrials
-        
-        if stimulus.xyNoise
-            % The following lines make 3D noise.
-            invNoise = makeNoiseInvF([stimulus.textureSupport_pix stimulus.textureSupport_pix stimulus.presentationDuration_f], stimulus.noiseExponent );
-        else
-            % The following lines make 2D (y-t) noise, which might be
-            % better if the subsequent experiment uses horizontal gratings.
-            invNoise = makeNoiseInvF([stimulus.textureSupport_pix stimulus.presentationDuration_f], stimulus.noiseExponent);
-            invNoise = permute(repmat(invNoise, [1 1 stimulus.textureSupport_pix]), [1 3 2]);
-        end
-        
-        noiseFrames = NaN(1,stimulus.presentationDuration_f);
 
-        for thisFrame = 1:stimulus.presentationDuration_f
-            noiseFrames(thisFrame) = Screen('MakeTexture', display.ptbWindow, (0.5*(1-gaussMask)) + gaussMask.*squeeze(invNoise(:,:,thisFrame)), [], [], 2);
-        end
-        
-        stimRect = Screen('Rect', noiseFrames(thisFrame));
+    if ~experiment.skipPractice
+        % Practice block uses windowed 1/f noise
+        gaussMask = makeGaussianBlob(stimulus.gaussianSD_pix, stimulus.textureSupport_pix);
+
+        % Make a dummy texture to get the correct rect dimensions
+        dummyFrame = Screen('MakeTexture', display.ptbWindow, gaussMask, [], [], 2);
+        stimRect = Screen('Rect', dummyFrame);
         allRects = CenterRectOnPointd(stimRect,stimulus.centres_x,stimulus.centres_y);
-        
-        thisPosition = randi(experiment.nAFC);
-        
-        % Get contrast value for this trial
-        thisStaircase = participant.pTrialOrder(participant.currentPracticeTrial);
-        thisContrast = min([1.0 10^QuestQuantile(pdata(thisStaircase))]);
-        
-        oldPriority = Priority(MaxPriority(display.ptbWindow));
-        for thisFrame = 1:stimulus.presentationDuration_f
-            Screen('DrawTexture', display.ptbWindow, noiseFrames(thisFrame), [], allRects(thisPosition,:), [], [], thisContrast);
-            drawFixationElements(display.ptbWindow, fixationElements);
-            Screen('DrawingFinished', display.ptbWindow);
-            Screen('Flip', display.ptbWindow);
-        end
-        Priority(oldPriority);
-        
-        Screen('Flip', display.ptbWindow);
-        Screen('Close', noiseFrames);
-        
-        % Get response (may need some work)
-        [responseButton, responseTime, startTime] = waitForButtonPressRESPONSEPixx([], [], [], [], [], equipment, display);
-        
-        % Check response
-        thisCorrect = thisPosition==responseButton;
-        
-        % Update staircase
-        pdata(thisStaircase) = QuestUpdate(pdata(thisStaircase), log10(thisContrast), thisCorrect);
-        
-        % Store responses and other trial data
+        Screen('Close', dummyFrame);
 
-        % Increment the practice trial counter
-        participant.currentPracticeTrial = participant.currentPracticeTrial + 1;
-        
+        % Make onset and offset ramps
+        rampEnvelope = makeTemporalEnvelope(0, stimulus, display);
+
+        for thisTrial = 1:experiment.nPracticeTrials
+
+            if stimulus.xyNoise
+                % The following lines make 3D noise.
+                invNoise = makeNoiseInvF([stimulus.textureSupport_pix stimulus.textureSupport_pix stimulus.presentationDuration_f], stimulus.noiseExponent );
+            else
+                % The following lines make 2D (y-t) noise, which might be
+                % better if the subsequent experiment uses horizontal gratings.
+                invNoise = makeNoiseInvF([stimulus.textureSupport_pix stimulus.presentationDuration_f], stimulus.noiseExponent);
+                invNoise = permute(repmat(invNoise, [1 1 stimulus.textureSupport_pix]), [1 3 2]);
+            end
+
+            noiseFrames = NaN(1,stimulus.presentationDuration_f);
+
+            for thisFrame = 1:stimulus.presentationDuration_f
+                noiseFrames(thisFrame) = Screen('MakeTexture', display.ptbWindow, (0.5*(1-gaussMask)) + gaussMask.*squeeze(invNoise(:,:,thisFrame)), [], [], 2);
+            end
+
+            stimRect = Screen('Rect', noiseFrames(thisFrame));
+            allRects = CenterRectOnPointd(stimRect,stimulus.centres_x,stimulus.centres_y);
+
+            thisPosition = randi(experiment.nAFC);
+
+            % Get contrast value for this trial
+            thisStaircase = participant.pTrialOrder(participant.currentPracticeTrial);
+            thisContrast = min([1.0 10^QuestQuantile(pdata(thisStaircase))]);
+            thisEnvelope = rampEnvelope * thisContrast;
+
+            % Display stimulus
+            oldPriority = Priority(MaxPriority(display.ptbWindow));
+            for thisFrame = 1:stimulus.presentationDuration_f
+                Screen('DrawTexture', display.ptbWindow, noiseFrames(thisFrame), [], allRects(thisPosition,:), [], [], thisEnvelope(thisFrame));
+                drawFixationElements(display.ptbWindow, fixationElements);
+                Screen('DrawingFinished', display.ptbWindow);
+                Screen('Flip', display.ptbWindow);
+            end
+            Priority(oldPriority);
+
+            Screen('Flip', display.ptbWindow);
+            Screen('Close', noiseFrames);
+
+            % Get response (may need some work)
+            [responseButton, responseTime, startTime] = waitForButtonPressRESPONSEPixx([], [], [], [], [], equipment, display);
+
+            % Check response
+            thisCorrect = thisPosition==responseButton;
+
+            % Update staircase
+            pdata(thisStaircase) = QuestUpdate(pdata(thisStaircase), log10(thisContrast), thisCorrect);
+
+            % Store responses and other trial data
+            trialCount = pdata(thisStaircase).trialCount;
+            pdata(thisStaircase).stimulusLocation(trialCount) = thisPosition;
+            pdata(thisStaircase).responseLocation(trialCount) = responseButton;
+            
+            % Increment the practice trial counter
+            participant.currentPracticeTrial = participant.currentPracticeTrial + 1;
+
+        end
     end
     
     
-    
     %% Start experimental blocks
-    
-    % Create procedural Gabors
+    for thisBlock = 1:experiment.nBlocks
+        
+        % Create procedural Gabors
+        [gaborId, gaborRect] = CreateProceduralGabor(display.ptbWindow, stimulus.textureSupport_pix, stimulus.textureSupport_pix, [], [], 1, 0.5);
+        allRects = CenterRectOnPointd(gaborRect,stimulus.centres_x,stimulus.centres_y);
     
         %% Start trial
+        for thisTrial = 1:experiment.nTrialsPerBlock(thisBlock)
 
-        % Get contrast value for this trial
-    
-        % Present stimulus
+            % Get frequency and contrast values for this trial
+            thisSpatialFrequencyNo = participant.trialOrder(1,participant.currentTrial);
+            thisTemporalFrequencyNo = participant.trialOrder(2,participant.currentTrial);
+            thisSpatialFrequency = stimulus.spatialFrequencies_cpp(thisSpatialFrequencyNo);
+            thisTemporalFrequency = stimulus.temporalFrequencies_Hz(thisTemporalFrequencyNo);
+            thisStaircase = participant.trialOrder(3,participant.currentTrial);
+            thisContrast = min([1.0 10^QuestQuantile(data(thisSpatialFrequencyNo,thisTemporalFrequencyNo,thisStaircase))]);
+            
+            % Randomise spatial phase and position of target
+            thisSpatialPhase = 360*rand;
+            thisPosition = randi(experiment.nAFC);
+            
+            % Create temporal envelope
+            [thisEnvelope, thisTemporalPhase] = makeTemporalEnvelope(thisTemporalFrequency, stimulus, display);
+            thisEnvelope = thisEnvelope * thisContrast;
+            
+            % Display stimulus
+            oldPriority = Priority(MaxPriority(display.ptbWindow));
+            for thisFrame = 1:stimulus.presentationDuration_f
+                
+                Screen('DrawTexture', display.ptbWindow, gaborId, [], ...
+                    allRects(thisPosition,:), rad2deg(stimulus.carrierAngle_rad), ...
+                    [], [], [], [], kPsychDontDoRotation, ...
+                    [thisSpatialPhase, thisSpatialFrequency, ...
+                    stimulus.gaussianSD_pix, thisEnvelope(thisFrame), 1, 0, 0, 0]);
+                drawFixationElements(display.ptbWindow, fixationElements);
+                Screen('DrawingFinished', display.ptbWindow);
+                Screen('Flip', display.ptbWindow);
+            end
+            Priority(oldPriority);
+
+            % Get response
+            [responseButton, responseTime, startTime] = waitForButtonPressRESPONSEPixx([], [], [], [], [], equipment, display);
+            
+            % Check response
+            thisCorrect = thisPosition==responseButton;
         
-        % Get response
-        
-        % Update staircase
+            % Update staircase
+            data(thisSpatialFrequencyNo,thisTemporalFrequencyNo,thisStaircase)...
+                = QuestUpdate(data(thisSpatialFrequencyNo,thisTemporalFrequencyNo,thisStaircase), log10(thisContrast), thisCorrect);
+            
+            % Store responses and other trial data
+            trialCount = data(thisSpatialFrequencyNo,thisTemporalFrequencyNo,thisStaircase).trialCount;
+            pdata(thisSpatialFrequencyNo,thisTemporalFrequencyNo,thisStaircase).stimulusLocation(trialCount) = thisPosition;
+            pdata(thisSpatialFrequencyNo,thisTemporalFrequencyNo,thisStaircase).responseLocation(trialCount) = responseButton;
+            
+            % Increment the trial counter
+            participant.currentTrial = participant.currentTrial + 1;
+            
+        end
     
     %% End block
     
     % Save staircase data
     
+    end
+    
 %% End experiment
 
 %% Close imaging and response pipelines
+Screen('CloseAll');
 closeResponsePipelineRESPONSEPixx(equipment);

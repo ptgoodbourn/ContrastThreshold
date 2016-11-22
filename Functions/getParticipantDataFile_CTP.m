@@ -46,12 +46,15 @@ function [ participant, data, pdata ] = getParticipantDataFile_CTP( directory, p
     else
         % If file doesn't exist, create it.
 
-        for thisFrequency = 1:experiment.nFrequencies
-            for thisStaircase = 1:staircase.nPerFrequency
-                tempData = QuestCreate(staircase.thresholdGuess, staircase.thresholdGuessSD, staircase.pThreshold, staircase.beta, staircase.delta, staircase.gamma); %#ok<*AGROW>
-                tempData.stimulusLocation = NaN(1,10000);
-                tempData.responseLocation = NaN(1,10000);
-                data(thisFrequency,thisStaircase) = tempData;
+        for thisSpatialFrequency = 1:experiment.nSpatialFrequencies
+            for thisTemporalFrequency = 1:experiment.nTemporalFrequencies
+                for thisStaircase = 1:staircase.nPerFrequency
+                    tempData = QuestCreate(staircase.thresholdGuess, staircase.thresholdGuessSD, staircase.pThreshold, staircase.beta, staircase.delta, staircase.gamma); %#ok<*AGROW>
+                    tempData.stimulusLocation = NaN(1,10000);
+                    tempData.responseLocation = NaN(1,10000);
+                    tempData.responseTime_s = NaN(1,10000);
+                    data(thisSpatialFrequency,thisTemporalFrequency,thisStaircase) = tempData;
+                end
             end
         end
 
@@ -60,6 +63,7 @@ function [ participant, data, pdata ] = getParticipantDataFile_CTP( directory, p
             tempData = QuestCreate(staircase.thresholdGuess, staircase.thresholdGuessSD, staircase.pThreshold, staircase.beta, staircase.delta, staircase.gamma); %#ok<*AGROW>
             tempData.stimulusLocation = NaN(1,10000);
             tempData.responseLocation = NaN(1,10000);
+            tempData.responseTime_s = NaN(1,10000);
             pdata(thisStaircase) = tempData;
         end
         
@@ -67,7 +71,7 @@ function [ participant, data, pdata ] = getParticipantDataFile_CTP( directory, p
         participant.currentPracticeTrial = 1;
         participant.currentTrial = 1;
         participant.pTrialOrder = randomiseTrialOrder(staircase.trialsPerStaircase, staircase.nPerFrequency);
-        participant.trialOrder = randomiseTrialOrder(staircase.trialsPerStaircase, staircase.nPerFrequency);
+        participant.trialOrder = randomiseTrialOrder(staircase.trialsPerStaircase, [experiment.nSpatialFrequencies experiment.nTemporalFrequencies staircase.nPerFrequency], 1);
         participant.startTime = now;
         
         % Save data file
@@ -76,4 +80,3 @@ function [ participant, data, pdata ] = getParticipantDataFile_CTP( directory, p
     end
 
 end
-

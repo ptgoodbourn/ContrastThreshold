@@ -54,14 +54,23 @@ function [ display ] = initialiseImagingPipelineDATAPixxM16( display )
     else
         PsychImaging('AddTask', 'General', 'EnableDataPixxM16Output');                                  % Enable the high-performance driver for M16 (m DataPixx device
         PsychImaging('AddTask', 'FinalFormatting', 'DisplayColorCorrection', 'SimpleGamma');            % Enable gamma correction
-        PsychImaging('AddTask', 'FinalFormatting', 'GeometryCorrection', display.geometryCalibration);  % Enable geometry calibration
+        
+        if isfield(display,'geometryCalibration')
+            PsychImaging('AddTask', 'FinalFormatting', 'GeometryCorrection', display.geometryCalibration);  % Enable geometry calibration
+        end
     end
     
     % Prepare a PsychToolbox window
     [display.ptbWindow, display.screenRect] = PsychImaging('OpenWindow', display.screenNo, display.backgroundVal, [], [], [], [], multisample);  % Open a PsychToolbox window
     
     if ~display.dummyMode
-        PsychColorCorrection('SetEncodingGamma', display.ptbWindow, display.gamma);                                     % Set encoding gamma
+        PsychColorCorrection('SetEncodingGamma', display.ptbWindow, display.gamma);     % Set encoding gamma
+    
+        if isfield(display,'minL')
+            PsychColorCorrection('SetExtendedGammaParameters', display.ptbWindow, ...
+                display.minL, display.maxL, display.gain, display.bias);                % Set extended parameters
+        end
+        
     end
         
     Screen('BlendFunction', display.ptbWindow, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

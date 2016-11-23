@@ -231,7 +231,7 @@ function [ responseButton, responseTime, startTime, stopTime ] = waitForButtonPr
                     responseButton = min(intersect(whichButtons,find(buttonStates)));                       % Record pressed button (or if multiple, button with lowest index)
                 end
                 
-            elseif any(~buttonStates(whichButtons) && waitForRelease)                                       % If any previously-pressed buttons are released
+            elseif any(~buttonStates(whichButtons) & waitForRelease)                                       % If any previously-pressed buttons are released
                 
                 if forWhat==1                                                                               % Previously-pressed button is released
                     goodResponse = 1;

@@ -12,6 +12,13 @@
 
 close all;
 
+%% Commonly switched parameters
+display.dummyMode = 1;                      % Set to 1 to run without DATAPixx and skip sync tests
+equipment.dummyMode = 1;                    % Run with keyboard instead of RESPONSEPixx
+
+experiment.skipInstructions = 1;
+experiment.skipPractice = 1;
+
 %% Set directories
 directory.base = '/Users/experimentalmode/Documents/MATLAB/ContrastThreshold/';
 directory.data = [directory.base 'Data_CTP/'];
@@ -20,8 +27,6 @@ addpath(genpath(directory.base));                       % Add directories to the
 
 %% Define experiment parameters
 experiment.instructionFile = 'Instructions_CTP.txt';
-experiment.skipInstructions = 1;
-experiment.skipPractice = 1;
 experiment.nBlocks = 8;
 
 %% Define display parameters
@@ -36,11 +41,9 @@ display.spatialResolution_ppm = 4400;                           % Display spatia
 display.viewingDistance_m = 0.5;                                % Viewing distance (m)
 display.width_m = 0.3;                                          % Width of the display (m)
 display.screenNo = max(Screen('Screens'));                      % Screen number
-display.dummyMode = 0;                                          % Set to 1 to run without DATAPixx and skip sync tests
 display.backgroundVal = 0.5;                                    % Background luminance in range [0,1]
 
 %% Define other equipment parameters
-equipment.dummyMode = 0;                    % Run with keyboard instead of RESPONSEPixx
 equipment.rightIndex = 1;                   % Button index for 'right' response
 equipment.upIndex = 2;                      % Button index for 'up' response
 equipment.leftIndex = 3;                    % Button index for 'left' response

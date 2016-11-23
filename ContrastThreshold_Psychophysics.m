@@ -25,22 +25,22 @@ experiment.skipPractice = 1;
 experiment.nBlocks = 8;
 
 %% Define display parameters
-display.gamma = 1.0;                                            % Gamma correction: Gamma (encoding)
-display.minL = 0.0;                                             % Gamma correction: Minimum intensity
-display.maxL = 1.0;                                             % Gamma correction: Maximum intensity
-display.gain = 1.0;                                             % Gamma correction: Gain
-display.bias = 0.0;                                             % Gamma correction: Bias
-display.geometryCalibration = 'BVLCalibdata_0_1280_800.mat';    % Filename for geometry calibration file in directory.calibration
+display.gamma = 0.423877;                                       % Gamma correction: Gamma (encoding)
+display.minL = 0.003617;                                        % Gamma correction: Minimum intensity
+display.maxL = 1.104823;                                        % Gamma correction: Maximum intensity
+display.gain = 0.898791;                                        % Gamma correction: Gain
+display.bias = 0.138418;                                        % Gamma correction: Bias
+display.geometryCalibration = 'BVLCalibdata_1_1280_1024.mat';   % Filename for geometry calibration file in directory.calibration
 display.refreshRate_Hz = 100;                                   % Display refresh rate (Hz)
 display.spatialResolution_ppm = 4400;                           % Display spatial resolution (pixels per m)
 display.viewingDistance_m = 0.5;                                % Viewing distance (m)
 display.width_m = 0.3;                                          % Width of the display (m)
 display.screenNo = max(Screen('Screens'));                      % Screen number
-display.dummyMode = 1;                                          % Set to 1 to run without DATAPixx and skip sync tests
+display.dummyMode = 0;                                          % Set to 1 to run without DATAPixx and skip sync tests
 display.backgroundVal = 0.5;                                    % Background luminance in range [0,1]
 
 %% Define other equipment parameters
-equipment.dummyMode = 1;                    % Run with keyboard instead of RESPONSEPixx
+equipment.dummyMode = 0;                    % Run with keyboard instead of RESPONSEPixx
 equipment.rightIndex = 1;                   % Button index for 'right' response
 equipment.upIndex = 2;                      % Button index for 'up' response
 equipment.leftIndex = 3;                    % Button index for 'left' response
@@ -112,6 +112,8 @@ stimulus.eccentricity_pix = stimulus.eccentricity_dva*display.spatialResolution_
 stimulus.textureSupport_pix = ceil(stimulus.gaussianTruncate_pix * 2) + 1;                          % Calculate size of required texture support (pixels)
 stimulus.presentationDuration_f = stimulus.presentationDuration_s * display.refreshRate_Hz;         % Calculate duration of presentation (frames)
 stimulus.fixationSubtense_pix = stimulus.fixationSubtense_dva*display.spatialResolution_ppd;        % Calculate subtense of fixation (pixels)
+
+equipment.responseIndex = [equipment.rightIndex equipment.upIndex equipment.leftIndex equipment.downIndex];
 
 %% Initialise system
 participant.randomSeed = setGlobalStreamFromClock();    % Use the system clock to reset the randomisation algorithm
@@ -205,7 +207,7 @@ stimulus.centres_y = tempy' + display.centre(2);
             Screen('Close', noiseFrames);
 
             % Get response (may need some work)
-            [responseButton, responseTime, startTime] = waitForButtonPressRESPONSEPixx([], [], [], [], [], equipment, display);
+            [responseButton, responseTime, startTime] = waitForButtonPressRESPONSEPixx(equipment.responseIndex, 2, [], [], 1, equipment, display);
 
             % Check response
             thisCorrect = thisPosition==responseButton;
@@ -264,10 +266,11 @@ stimulus.centres_y = tempy' + display.centre(2);
                 Screen('DrawingFinished', display.ptbWindow);
                 Screen('Flip', display.ptbWindow);
             end
+            
             Priority(oldPriority);
 
             % Get response
-            [responseButton, responseTime, startTime] = waitForButtonPressRESPONSEPixx([], [], [], [], [], equipment, display);
+            [responseButton, responseTime, startTime] = waitForButtonPressRESPONSEPixx(equipment.responseIndex, 2, [], [], 1, equipment, display);
             
             % Check response
             thisCorrect = thisPosition==responseButton;
@@ -278,8 +281,8 @@ stimulus.centres_y = tempy' + display.centre(2);
             
             % Store responses and other trial data
             trialCount = data(thisSpatialFrequencyNo,thisTemporalFrequencyNo,thisStaircase).trialCount;
-            pdata(thisSpatialFrequencyNo,thisTemporalFrequencyNo,thisStaircase).stimulusLocation(trialCount) = thisPosition;
-            pdata(thisSpatialFrequencyNo,thisTemporalFrequencyNo,thisStaircase).responseLocation(trialCount) = responseButton;
+            data(thisSpatialFrequencyNo,thisTemporalFrequencyNo,thisStaircase).stimulusLocation(trialCount) = thisPosition;
+            data(thisSpatialFrequencyNo,thisTemporalFrequencyNo,thisStaircase).responseLocation(trialCount) = responseButton;
             
             % Increment the trial counter
             participant.currentTrial = participant.currentTrial + 1;

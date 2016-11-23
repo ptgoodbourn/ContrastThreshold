@@ -252,7 +252,7 @@ function [ responseButton, responseTime, startTime, stopTime ] = waitForButtonPr
                 
             else                                                                                            % We found a good response inside this loop, so store response times
                 responseTime.box = max(transitionTimesSecs);
-                responseTime.getSecs = BoxsecsToGetSecs(transitionTimesSecs);
+                responseTime.getSecs = PsychDataPixx('BoxsecsToGetSecs', transitionTimesSecs);
             end
         end
         

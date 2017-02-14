@@ -1,14 +1,17 @@
-%CONTRASTTHRESHOLD_PSYCHOPHYSICS Make psychophysical contrast threshold
-%measurements.
-%   Make psychophysical measurements of contrast threshold at specified
-%   spatial and temporal frequencies. Designed for use with the DATAPixx
-%   for increased contrast resolution, but can be tested without one by 
-%   setting display.dummyMode parameter to 1. Various other parameters are
-%   set in the first sections, including local directory paths, display
-%   parameters, stimulus parameters and staircase parameters. The
-%   experiment includes practice trials using a 1/(f^n) noise stimulus.
+%CONTRASTTHRESHOLD_ELECTROPHYSIOLOGY Make electrophysiological contrast
+%threshold measurements.
+%   Make electrophysiological measurements of contrast threshold at 
+%   specified spatial and temporal frequencies. Presents an annular target
+%   that ramps upwards in contrast. Infrequently changes the fixation
+%   marker, requiring a button press from the observer. Designed for use 
+%   with the DATAPixx for increased contrast resolution, but can be tested 
+%   without one by setting display.dummyMode parameter to 1. Various other 
+%   parameters are set in the first sections, including local directory 
+%   paths, display parameters, stimulus parameters and staircase 
+%   parameters. The experiment includes practice trials using a 1/(f^n)
+%   noise stimulus.
 %
-%   31/08/16 - 08/02/17 PTG wrote it.
+%   15/02/17 PTG adapted it from ContrastThreshold_Psychophysics.
 
 close all;
 
@@ -21,13 +24,14 @@ experiment.skipPractice = 0;
 
 %% Set directories
 directory.base = '/Users/experimentalmode/Documents/MATLAB/ContrastThreshold/';
-directory.data = [directory.base 'Data_CTP/'];
+directory.data = [directory.base 'Data_CTE/'];
 directory.auxiliary = [directory.base 'Auxiliary/'];    % Contains calibration and instruction files
 addpath(genpath(directory.base));                       % Add directories to the MATLAB path
 
 %% Define experiment parameters
-experiment.instructionFile = 'Instructions_CTP.txt';
+experiment.instructionFile = 'Instructions_CTE.txt';
 experiment.nBlocks = 8;
+experiment.nTrialsPerFrequency = 5;
 
 %% Define display parameters
 display.gamma = 0.423877;                                       % Gamma correction: Gamma (encoding)
@@ -70,34 +74,24 @@ stimulus.gaussianSD_dva = 1.0;                          % SD of Gaussian window 
 stimulus.gaussianTruncate_SD = 4;                       % Hard truncation of Gaussian window (SD)
 stimulus.eccentricity_dva = 4.0;                        % Eccentricity of stimulus centre (dva)
 stimulus.carrierAngle_rad = pi*0.5;                     % Angle of grating carrier vector (rad)
-stimulus.positions_rad = pi*[0.0 1.5 1.0 0.5];          % Stimulus positions (on imaginary circle). Use this variable to set the number of alternatives.
 stimulus.fixationSubtense_dva = 0.4;                    % Subtense of outer segment of the fixation marker (dva)
 stimulus.fixationLineWidth_pix = 4;                     % Line width of fixation crosshairs (pixels)
 
 stimulus.temporalFrequencies_Hz = [2.0 8.0 20.0];   % Temporal frequencies (Hz)
+stimulus.temporalWaveforms = [1 1 1];               % Temporal waveforms at each frequency: 0 = sinewave, 1 = squarewave
 stimulus.fixationDuration_s = 0.5;                  % Duration of fixation before stimulus onset
-stimulus.presentationDuration_s = 0.5;              % Presentation duration (s)
-stimulus.rampDuration_s = 0.1;                      % Duration of onset and offset ramps (s)
+stimulus.presentationDuration_s = 20.0;             % Presentation duration (s)
+stimulus.rampDuration_s = 1.0;                      % Duration of offset ramp (s)
 stimulus.noiseExponent = 0;                         % Noise exponent for practice stimuli
 stimulus.xyNoise = 0;                               % Should practice stimulus noise be x-y-t (1) or just y-t (0)?
-
-%% Define staircase parameters
-staircase.thresholdGuess = log10(0.2);              % (Log of) Initial threshold guess
-staircase.thresholdGuessSD = 1.0;                   % (Log of) Initial threshold guess standard deviation
-staircase.nPerFrequency = 2;                        % Number of staircases per spatiotemporal frequency
-staircase.trialsPerStaircase = 30;                  % Number of trials per staircase
-staircase.delta = 0.1;                              % Staircase lapse rate
-staircase.beta = 3.5;                               % Slope of psychometric function
-staircase.pThreshold = .72;                         % Percent correct defined as threshold
 
 %% Calculate parameters from defined parameters
 experiment.nSpatialFrequencies = numel(stimulus.spatialFrequencies_cpd);                                            % Number of spatial frequencies in the experiment
 experiment.nTemporalFrequencies = numel(stimulus.temporalFrequencies_Hz);                                           % Number of temporal frequencies in the experiment
-experiment.nFrequencies = experiment.nSpatialFrequencies*experiment.nTemporalFrequencies;                           % Total number of spatio-temporal frequency combinations
-experiment.nAFC = numel(stimulus.positions_rad);                                                                    % Number of forced-choice alternative responses
+experiment.nFrequencies = experiment.nSpatialFrequencies*experiment.nTemporalFrequencies;                           % Total number of spatio-temporal frequency combinationssas                                                                   % Number of forced-choice alternative responses
 experiment.instructionFile = [directory.auxiliary experiment.instructionFile];                                      % Convert to absolute path
-experiment.nExperimentalTrials = staircase.trialsPerStaircase * staircase.nPerFrequency * experiment.nFrequencies;  % Calculate total number of trials in the experiment
-experiment.nPracticeTrials = staircase.trialsPerStaircase * staircase.nPerFrequency;                                % Calculate total number of practice trials
+experiment.nExperimentalTrials = experiment.nTrialsPerFrequency * experiment.nFrequencies;                          % Calculate total number of trials in the experiment
+experiment.nPracticeTrials = experiment.nTrialsPerFrequency;                                                        % Calculate total number of practice trials
 experiment.nTrialsPerBlock = experiment.nExperimentalTrials/experiment.nBlocks;
 
 if round(experiment.nTrialsPerBlock)==experiment.nTrialsPerBlock
@@ -118,7 +112,7 @@ stimulus.spatialFrequencies_cpp = stimulus.spatialFrequencies_cpd/display.spatia
 stimulus.gaussianSD_pix = stimulus.gaussianSD_dva*display.spatialResolution_ppd;                    % Calculate Gaussian SD (pixels)
 stimulus.gaussianTruncate_pix = stimulus.gaussianTruncate_SD*stimulus.gaussianSD_pix;               % Calculate hard truncation of Gaussian window (pixels)
 stimulus.eccentricity_pix = stimulus.eccentricity_dva*display.spatialResolution_ppd;                % Calculate eccentricity of stimulus centre (pixels)
-stimulus.textureSupport_pix = ceil(stimulus.gaussianTruncate_pix * 2) + 1;                          % Calculate size of required texture support (pixels)
+stimulus.textureSupport_pix = ceil(stimulus.eccentricity_pix + stimulus.gaussianTruncate_pix) + 1;  % Calculate size of required texture support (pixels)
 stimulus.presentationDuration_f = stimulus.presentationDuration_s * display.refreshRate_Hz;         % Calculate duration of presentation (frames)
 stimulus.fixationSubtense_pix = stimulus.fixationSubtense_dva*display.spatialResolution_ppd;        % Calculate subtense of fixation (pixels)
 
@@ -131,7 +125,7 @@ participant.randomSeed = setGlobalStreamFromClock();    % Use the system clock t
 participant.code = getParticipantCode();                % Get participant code from the command window
 
 %% Create or retrieve participant data file
-[participant, data, pdata] = getParticipantDataFile_CTP(directory, participant, experiment, staircase);  % Makes a new file or retrieves existing one
+[participant, data, pdata] = getParticipantDataFile_CTE(directory, participant, experiment);            % Makes a new file or retrieves existing one
 
 %% Read in instruction file
 instructionArray = readInstructions(experiment.instructionFile);                                        % Read in the instructions

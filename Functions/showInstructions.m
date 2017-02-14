@@ -66,6 +66,11 @@ function [ nx, ny, textBounds, flipTime, oldProperties ] = showInstructions( ptb
 %   [nx, ny, textBounds, flipTime, oldProperties] = SHOWINSTRUCTIONS(ptbWindow...) 
 %   returns a structure containing the old values of any fields changed
 %   using the fontProperties argument.
+%
+%   31/08/16 PTG wrote it.
+%
+%   14/02/17 PTG fixed a bug caused by a missing argument in the call to
+%   DrawFormattedText.
 
     oldProperties = struct;     % Make a structure to store changed properties
 
@@ -169,6 +174,7 @@ function [ nx, ny, textBounds, flipTime, oldProperties ] = showInstructions( ptb
     % Now display the text
     [nx, ny, textBounds] = DrawFormattedText(ptbWindow, displayText, ...
         fontProperties.sx, fontProperties.sy, fontProperties.colour, ...
+        fontProperties.wrapAt, ...
         fontProperties.flipHorizontal, fontProperties.flipVertical, ...
         fontProperties.vSpacing, fontProperties.rightToLeft, ...
         fontProperties.winRect);

@@ -62,6 +62,11 @@ function [ nx, ny, textBounds, flipTime ] = appendInstructionsContinue( ptbWindo
 %   [nx, ny, textBounds, flipTime] = APPENDINSTRUCTIONSCONTINUE(ptbWindow)
 %   additionally returns the VBL timestamp of the flip as reported by the
 %   Screen('Flip') command.
+%
+%   31/08/16 PTG wrote it.
+%
+%   14/02/17 PTG fixed a bug caused by a missing argument in the call to
+%   DrawFormattedText.
 
     if (nargin < 2) || isempty(buttonText)
         buttonText = 'any button';
@@ -133,6 +138,7 @@ function [ nx, ny, textBounds, flipTime ] = appendInstructionsContinue( ptbWindo
     % Now display the text.
     [nx, ny, textBounds] = DrawFormattedText(ptbWindow, displayText, ...
         fontProperties.sx, fontProperties.sy, fontProperties.colour, ...
+        fontProperties.wrapAt, ...
         fontProperties.flipHorizontal, fontProperties.flipVertical, ...
         fontProperties.vSpacing, fontProperties.rightToLeft, ...
         fontProperties.winRect);

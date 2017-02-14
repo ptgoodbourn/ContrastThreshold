@@ -1,5 +1,5 @@
-function [ participant, data, pdata ] = getParticipantDataFile_CTP( directory, participant, experiment, staircase )
-%GETPARTICIPANTDATAFILE_CTP Makes or retrieves a data file for contrast
+function [ participant, data, pdata ] = getParticipantDataFile_CTE( directory, participant, experiment)
+%GETPARTICIPANTDATAFILE_CTE Makes or retrieves a data file for contrast
 %threshold (psychophysics) experiment.
 %
 %   Looks in the current directory for a participant data file for the
@@ -8,12 +8,12 @@ function [ participant, data, pdata ] = getParticipantDataFile_CTP( directory, p
 %   
 %   Usage:
 %   [participant, data, pdata] =
-%        getParticipantDataFile_CTP(directory, participant, experiment, staircase)
+%        getParticipantDataFile_CTE(directory, participant, experiment)
 %
 %   All of the input and output arguments are structures with one or more 
 %   fields. 'participant' contains participant infomation. 'data'
-%   contains the structures for storing staircase data. 'pdata' contains a 
-%   structre for storing staircase data for practice trials.
+%   contains the structures for storing experiment data. 'pdata' contains a 
+%   structure for storing data for practice trials.
 %   
 %   Inputs must contain (at a minimum):
 %
@@ -23,22 +23,12 @@ function [ participant, data, pdata ] = getParticipantDataFile_CTP( directory, p
 %
 %   experiment.nSpatialFrequencies (Number of spatial frequencies)
 %   experiment.nTemporalFrequencies (Number of temporal frequencies)
-%   experiment.nAFC (Nunber of forced-choice alternative responses)
+%   experiment.nTrialsPerFrequency (Number of trials per staircase)
 %
-%   staircase.nPerFrequency (Staircases per frequency)
-%   staircase.thresholdGuess (Log of initial threshold guess)
-%   staircase.thresholdGuessSD (Log of guess standard deviation)
-%   staircase.trialsPerStaircase (Number of trials per staircase)
-%   staircase.gamma (Guess rate, i.e. 1/nAFC)
-%   staircase.delta (Lapse rate)
-%   staircase.beta (Slope of psychometric function)
-%   staircase.pThreshold (Percent correct defined as threshold)
-%   staircase.nStaircases (Total number of independent staircases)
-%
-%   31/08/16 PTG wrote it.
+%   15/02/17 PTG adapted it from getParticipantDataFile_CTP.
 
     % Check current directory for user data file
-    participant.dataFile = [directory.data participant.code '_Data_CTP.mat'];
+    participant.dataFile = [directory.data participant.code '_Data_CTE.mat'];
     newUser = ~exist(participant.dataFile,'file');
 
     if ~ newUser

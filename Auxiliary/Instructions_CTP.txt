@@ -1,16 +1,44 @@
-Page one of instructions here, to be replaced with new instructions later.
+This test measures your ability to see faint patterns.
 
-This text should appear in a new paragraph.
-***
-Second page of instructions,\nwith a single line break to test that the newline symbol works.
-***
-Some intermediate instructions, between the practice trials and experimental trials.
+On each trial, a striped pattern will appear\nat the top, bottom, left or right of the screen.
 
-Press any key to continue.
+Your task is to indicate where the pattern appeared.
 ***
-Some instructions for between blocks. This is block %%%.
+You should stare directly at the marker in the very centre of the screen.\nTry not to move your eyes throughout the trial.
 
-Press any key to continue.
+After the pattern has appeared,\nyou should press the button on your response box that corresponds to its location.\nFor example, if the pattern appears at the top of the screen,\nyou should press the top button.
+
+Sometimes the pattern will be very difficult to see.\nIf you are unsure where it appeared, please make your best guess.
 ***
-Page of instructions at the end of the experiment.
+After you respond, you will hear feedback.
+
+If your response was correct, you will hear two short, high-pitched beeps.
+
+If your response was incorrect, you will hear one long, low-pitched beep.
+***
+If you have any questions before you begin, please ask the experimenter now.
+
+Otherwise, we will now begin some practice trials.
+
+Please remember to keep your eyes fixed on the marker in the centre of the screen.
+***
+The next block will be number 1 of %%%.
+***
+Thank you. The practice trials are complete.
+
+If you have any questions before you continue, please ask the experimenter now.
+
+Otherwise, we will now begin the test.
+
+The next block will be number 1 of %%%.
+
+Please remember to keep your eyes fixed on the marker in the centre of the screen.
+***
+Thank you.\nThis block of trials is complete.\nTake a short break if you'd like.
+
+The next block will be number %%% of %%%.
+***
+Thank you.\nThe test is complete.
+
+Please wait for the experimenter.
 ***

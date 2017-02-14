@@ -6,9 +6,9 @@
 %   setting display.dummyMode parameter to 1. Various other parameters are
 %   set in the first sections, including local directory paths, display
 %   parameters, stimulus parameters and staircase parameters. The
-%   experiment includes practice trials using a 1/f noise stimulus.
+%   experiment includes practice trials using a 1/(f^n) noise stimulus.
 %
-%   31/08/16 - 06/09/16 PTG wrote it.
+%   31/08/16 - 08/02/17 PTG wrote it.
 
 close all;
 
@@ -17,7 +17,7 @@ display.dummyMode = 1;                      % Set to 1 to run without DATAPixx a
 equipment.dummyMode = 1;                    % Run with keyboard instead of RESPONSEPixx
 
 experiment.skipInstructions = 1;
-experiment.skipPractice = 1;
+experiment.skipPractice = 0;
 
 %% Set directories
 directory.base = '/Users/experimentalmode/Documents/MATLAB/ContrastThreshold/';
@@ -38,9 +38,9 @@ display.bias = 0.138418;                                        % Gamma correcti
 display.geometryCalibration = 'BVLCalibdata_1_1280_1024.mat';   % Filename for geometry calibration file in directory.calibration
 display.refreshRate_Hz = 100;                                   % Display refresh rate (Hz)
 display.spatialResolution_ppm = 4400;                           % Display spatial resolution (pixels per m)
-display.viewingDistance_m = 0.5;                                % Viewing distance (m)
+display.viewingDistance_m = 1.0;                                % Viewing distance (m)
 display.width_m = 0.3;                                          % Width of the display (m)
-display.screenNo = max(Screen('Screens'));                      % Screen number
+display.screenNo = min(Screen('Screens'));                      % Screen number
 display.backgroundVal = 0.5;                                    % Background luminance in range [0,1]
 
 %% Define other equipment parameters
@@ -53,6 +53,9 @@ equipment.centreIndex = 5;                  % Button index for 'centre' response
 equipment.waitForWhat = 2;                  % See waitForButtonPressRESPONSEPixx
 equipment.continueDelay_s = 5.0;            % Delay on instruction screen before allowed to press a button to continue
 equipment.continueButtonIntensity = 0.5;    % Light intensity for 'continue' button during instructions
+
+equipment.audioFreq = 48000;                % Default audio sample rate
+equipment.audioChannels = 2;                % Stereo
 
 %% Define font parameters
 font.typeFace = 'Helvetica';	% Typeface of instruction text
@@ -70,6 +73,7 @@ stimulus.fixationSubtense_dva = 0.4;                    % Subtense of outer segm
 stimulus.fixationLineWidth_pix = 4;                     % Line width of fixation crosshairs (pixels)
 
 stimulus.temporalFrequencies_Hz = [2.0 8.0 20.0];   % Temporal frequencies (Hz)
+stimulus.fixationDuration_s = 0.5;                  % Duration of fixation before stimulus onset
 stimulus.presentationDuration_s = 0.5;              % Presentation duration (s)
 stimulus.rampDuration_s = 0.1;                      % Duration of onset and offset ramps (s)
 stimulus.noiseExponent = 0;                         % Noise exponent for practice stimuli
@@ -127,9 +131,13 @@ participant.code = getParticipantCode();                % Get participant code f
 %% Create or retrieve participant data file
 [participant, data, pdata] = getParticipantDataFile_CTP(directory, participant, experiment, staircase);  % Makes a new file or retrieves existing one
 
-%% Initialise imaging and response pipelines
+%% Read in instruction file
+instructionArray = readInstructions(experiment.instructionFile);                                        % Read in the instructions
+
+%% Initialise imaging, response and audio pipelines
 display = initialiseImagingPipelineDATAPixxM16(display);    % Initialise imaging pipeline
 initialiseResponsePipelineRESPONSEPixx(equipment);          % Initialise response pipeline
+equipment = initialiseAudioPipeline(equipment);             % Initialise audio pipeline
 
 %% Calculate final parameters after pipeline initialisation
 [tempx, tempy] = pol2cart(stimulus.positions_rad, stimulus.eccentricity_pix);
@@ -140,22 +148,18 @@ stimulus.centres_y = tempy' + display.centre(2);
 
     %% Show instructions
     if ~experiment.skipInstructions
-    
-        instructionArray = readInstructions(experiment.instructionFile);                                        % Read in the instructions
-
-        for thisPage = 1:3
-            [nx, ny, textRect, flipTime] = showInstructions(display.ptbWindow, instructionArray, thisPage, [], font, 2);    % Show the page
+        for thisPage = 1:4
+            [~, ny, ~, flipTime] = showInstructions(display.ptbWindow, instructionArray, thisPage, [], font, 2);    % Show the page
             appendInstructionsContinue(display.ptbWindow, 'the centre button', font, ny+100, 1);                            % Append the continue message without flipping
-            [rB,rT,startT,stopT] = waitForButtonPressRESPONSEPixx(equipment.centreIndex, equipment.waitForWhat, ...
+            waitForButtonPressRESPONSEPixx(equipment.centreIndex, equipment.waitForWhat, ...
                 1, flipTime+equipment.continueDelay_s, equipment.continueButtonIntensity, equipment, display);              % Flip and wait for button press
         end
-        
     end
     
     %% Start practice block
     fixationElements = prepareFixationElements(stimulus.fixationSubtense_pix, display.centre, round(rand), stimulus.fixationLineWidth_pix);
 
-    if ~experiment.skipPractice
+    if (~experiment.skipPractice) && (participant.currentPracticeTrial<=experiment.nPracticeTrials)
         % Practice block uses windowed 1/f noise
         gaussMask = makeGaussianBlob(stimulus.gaussianSD_pix, stimulus.textureSupport_pix);
 
@@ -196,8 +200,14 @@ stimulus.centres_y = tempy' + display.centre(2);
             thisContrast = min([1.0 10^QuestQuantile(pdata(thisStaircase))]);
             thisEnvelope = rampEnvelope * thisContrast;
 
+            % Display fixation
+            drawFixationElements(display.ptbWindow, fixationElements);
+            Screen('DrawingFinished', display.ptbWindow);
+            fixTime = Screen('Flip', display.ptbWindow);
+            
             % Display stimulus
             oldPriority = Priority(MaxPriority(display.ptbWindow));
+            WaitSecs('UntilTime', fixTime + stimulus.fixationDuration_s);
             for thisFrame = 1:stimulus.presentationDuration_f
                 Screen('DrawTexture', display.ptbWindow, noiseFrames(thisFrame), [], allRects(thisPosition,:), [], [], thisEnvelope(thisFrame));
                 drawFixationElements(display.ptbWindow, fixationElements);
@@ -209,12 +219,14 @@ stimulus.centres_y = tempy' + display.centre(2);
             Screen('Flip', display.ptbWindow);
             Screen('Close', noiseFrames);
 
-            % Get response (may need some work)
+            % Get response
             [responseButton, responseTime, startTime] = waitForButtonPressRESPONSEPixx(equipment.responseIndex, 2, [], [], 1, equipment, display);
 
             % Check response
             thisCorrect = thisPosition==responseButton;
 
+            % Give feedback
+            
             % Update staircase
             pdata(thisStaircase) = QuestUpdate(pdata(thisStaircase), log10(thisContrast), thisCorrect);
 
@@ -227,8 +239,24 @@ stimulus.centres_y = tempy' + display.centre(2);
             participant.currentPracticeTrial = participant.currentPracticeTrial + 1;
 
         end
+        
+        save(participant.dataFile, 'directory', 'participant', 'experiment', 'staircase', 'pdata', 'data');
+        
     end
-    
+ 
+    %% Show intermediate instructions
+    if experiment.skipInstructions
+        [~, ny, ~, flipTime] = showInstructions(display.ptbWindow, instructionArray, 5, num2str(experiment.nBlocks), font, 2);    % Show the page
+        appendInstructionsContinue(display.ptbWindow, 'the centre button', font, ny+100, 1);                            % Append the continue message without flipping
+        [rB,rT,startT,stopT] = waitForButtonPressRESPONSEPixx(equipment.centreIndex, equipment.waitForWhat, ...
+            1, flipTime+equipment.continueDelay_s, equipment.continueButtonIntensity, equipment, display);              % Flip and wait for button press
+    else
+        [~, ny, ~, flipTime] = showInstructions(display.ptbWindow, instructionArray, 6, num2str(experiment.nBlocks), font, 2);    % Show the page
+        appendInstructionsContinue(display.ptbWindow, 'the centre button', font, ny+100, 1);                            % Append the continue message without flipping
+        [rB,rT,startT,stopT] = waitForButtonPressRESPONSEPixx(equipment.centreIndex, equipment.waitForWhat, ...
+            1, flipTime+equipment.continueDelay_s, equipment.continueButtonIntensity, equipment, display);              % Flip and wait for button press
+
+    end
     
     %% Start experimental blocks
     for thisBlock = 1:experiment.nBlocks
@@ -256,8 +284,14 @@ stimulus.centres_y = tempy' + display.centre(2);
             [thisEnvelope, thisTemporalPhase] = makeTemporalEnvelope(thisTemporalFrequency, stimulus, display);
             thisEnvelope = thisEnvelope * thisContrast;
             
+            % Display fixation
+            drawFixationElements(display.ptbWindow, fixationElements);
+            Screen('DrawingFinished', display.ptbWindow);
+            fixTime = Screen('Flip', display.ptbWindow);
+            
             % Display stimulus
             oldPriority = Priority(MaxPriority(display.ptbWindow));
+            WaitSecs('UntilTime', fixTime + stimulus.fixationDuration_s);
             for thisFrame = 1:stimulus.presentationDuration_f
                 
                 Screen('DrawTexture', display.ptbWindow, gaborId, [], ...
@@ -271,7 +305,8 @@ stimulus.centres_y = tempy' + display.centre(2);
             end
             
             Priority(oldPriority);
-
+            Screen('Flip', display.ptbWindow);
+            
             % Get response
             [responseButton, responseTime, startTime] = waitForButtonPressRESPONSEPixx(equipment.responseIndex, 2, [], [], 1, equipment, display);
             
@@ -292,13 +327,25 @@ stimulus.centres_y = tempy' + display.centre(2);
             
         end
     
-    %% End block
-    
-    % Save staircase data
+        %% End block
+
+        % Save staircase data
+        save(participant.dataFile, 'directory', 'participant', 'experiment', 'staircase', 'pdata', 'data');
+
+        % Show instructions
+        if thisBlock < experiment.nBlocks
+            [~, ny, ~, flipTime] = showInstructions(display.ptbWindow, instructionArray, 7, {num2str(thisBlock), num2str(experiment.nBlocks)}, font, 2);    % Show the page
+            appendInstructionsContinue(display.ptbWindow, 'the centre button', font, ny+100, 1);                            % Append the continue message without flipping
+            [rB,rT,startT,stopT] = waitForButtonPressRESPONSEPixx(equipment.centreIndex, equipment.waitForWhat, ...
+                1, flipTime+equipment.continueDelay_s, equipment.continueButtonIntensity, equipment, display);              % Flip and wait for button press
+        end
     
     end
     
 %% End experiment
+[nx, ny, textRect, flipTime] = showInstructions(display.ptbWindow, instructionArray, 8, [], font, 2);    % Show the page
+fprintf('\n\nExperiment complete. Hit any key to exit.\n\n');
+KbWait(-1,2);
 
 %% Close imaging and response pipelines
 Screen('CloseAll');

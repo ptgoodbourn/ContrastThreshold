@@ -84,7 +84,7 @@ function equipment = initialiseAudioPipeline( equipment )
     if isfield(equipment,'audioSpecialFlags')
         specialFlags = equipment.audioSpecialFlags;
     else
-        specialFlags = [];
+        specialFlags = 0;
     end
     
     InitializePsychSound;

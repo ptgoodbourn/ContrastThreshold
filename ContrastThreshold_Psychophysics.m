@@ -16,8 +16,8 @@ close all;
 display.dummyMode = 1;                      % Set to 1 to run without DATAPixx and skip sync tests
 equipment.dummyMode = 1;                    % Run with keyboard instead of RESPONSEPixx
 
-experiment.skipInstructions = 0;
-experiment.skipPractice = 0;
+experiment.skipInstructions = 1;
+experiment.skipPractice = 1;
 
 %% Set directories
 directory.base = '/Users/experimentalmode/Documents/MATLAB/ContrastThreshold/';
@@ -121,6 +121,7 @@ stimulus.eccentricity_pix = stimulus.eccentricity_dva*display.spatialResolution_
 stimulus.textureSupport_pix = ceil(stimulus.gaussianTruncate_pix * 2) + 1;                          % Calculate size of required texture support (pixels)
 stimulus.presentationDuration_f = stimulus.presentationDuration_s * display.refreshRate_Hz;         % Calculate duration of presentation (frames)
 stimulus.fixationSubtense_pix = stimulus.fixationSubtense_dva*display.spatialResolution_ppd;        % Calculate subtense of fixation (pixels)
+stimulus.carrierAngle_deg = rad2deg(stimulus.carrierAngle_rad);
 
 equipment.responseIndex = [equipment.rightIndex equipment.upIndex equipment.leftIndex equipment.downIndex];
 
@@ -266,7 +267,8 @@ stimulus.centres_y = tempy' + display.centre(2);
             trialCount = pdata(thisStaircase).trialCount;
             pdata(thisStaircase).stimulusLocation(trialCount) = thisPosition;
             pdata(thisStaircase).responseLocation(trialCount) = responseButton;
-            
+            pdata(thisStaircase).responseTime_s(trialCount) = responseTime.getSecs;
+
             % Increment the practice trial counter
             participant.currentPracticeTrial = participant.currentPracticeTrial + 1;
 
@@ -327,8 +329,8 @@ stimulus.centres_y = tempy' + display.centre(2);
             for thisFrame = 1:stimulus.presentationDuration_f
                 
                 Screen('DrawTexture', display.ptbWindow, gaborId, [], ...
-                    allRects(thisPosition,:), rad2deg(stimulus.carrierAngle_rad), ...
-                    [], [], [], [], kPsychDontDoRotation, ...
+                    allRects(thisPosition,:), stimulus.carrierAngle_deg, ...
+                    [], [], [0 0 0 1], [], kPsychDontDoRotation, ...
                     [thisSpatialPhase, thisSpatialFrequency, ...
                     stimulus.gaussianSD_pix, thisEnvelope(thisFrame), 1, 0, 0, 0]);
                 drawFixationElements(display.ptbWindow, fixationElements);
@@ -356,7 +358,7 @@ stimulus.centres_y = tempy' + display.centre(2);
             trialCount = data(thisSpatialFrequencyNo,thisTemporalFrequencyNo,thisStaircase).trialCount;
             data(thisSpatialFrequencyNo,thisTemporalFrequencyNo,thisStaircase).stimulusLocation(trialCount) = thisPosition;
             data(thisSpatialFrequencyNo,thisTemporalFrequencyNo,thisStaircase).responseLocation(trialCount) = responseButton;
-            
+            data(thisSpatialFrequencyNo,thisTemporalFrequencyNo,thisStaircase).responseTime_s(trialCount) = responseTime.getSecs;
             % Increment the trial counter
             participant.currentTrial = participant.currentTrial + 1;
             

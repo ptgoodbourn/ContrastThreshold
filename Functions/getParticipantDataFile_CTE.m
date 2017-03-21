@@ -1,6 +1,6 @@
 function [ participant, data, pdata ] = getParticipantDataFile_CTE( directory, participant, experiment)
 %GETPARTICIPANTDATAFILE_CTE Makes or retrieves a data file for contrast
-%threshold (psychophysics) experiment.
+%threshold (electrophysiology) experiment.
 %
 %   Looks in the current directory for a participant data file for the
 %   current participant. If it exists, it loads the file. If it doesn't, it
@@ -23,7 +23,8 @@ function [ participant, data, pdata ] = getParticipantDataFile_CTE( directory, p
 %
 %   experiment.nSpatialFrequencies (Number of spatial frequencies)
 %   experiment.nTemporalFrequencies (Number of temporal frequencies)
-%   experiment.nTrialsPerFrequency (Number of trials per staircase)
+%   experiment.nTrialsPerFrequency (Total number of trials per frequency)
+%   experiment.fullTrialsPerFrequency (Number of non-catch trials per freq)
 %
 %   15/02/17 PTG adapted it from getParticipantDataFile_CTP.
 
@@ -35,38 +36,26 @@ function [ participant, data, pdata ] = getParticipantDataFile_CTE( directory, p
         % If file exists, load it.
         load(participant.dataFile);
     else
+        
         % If file doesn't exist, create it.
-
-        for thisSpatialFrequency = 1:experiment.nSpatialFrequencies
-            for thisTemporalFrequency = 1:experiment.nTemporalFrequencies
-                for thisStaircase = 1:staircase.nPerFrequency
-                    tempData = QuestCreate(staircase.thresholdGuess, staircase.thresholdGuessSD, staircase.pThreshold, staircase.beta, staircase.delta, staircase.gamma); %#ok<*AGROW>
-                    tempData.stimulusLocation = NaN(1,10000);
-                    tempData.responseLocation = NaN(1,10000);
-                    tempData.responseTime_s = NaN(1,10000);
-                    data(thisSpatialFrequency,thisTemporalFrequency,thisStaircase) = tempData;
-                end
-            end
-        end
-
-        % Create data for practice trials
-        for thisStaircase = 1:staircase.nPerFrequency
-            tempData = QuestCreate(staircase.thresholdGuess, staircase.thresholdGuessSD, staircase.pThreshold, staircase.beta, staircase.delta, staircase.gamma); %#ok<*AGROW>
-            tempData.stimulusLocation = NaN(1,10000);
-            tempData.responseLocation = NaN(1,10000);
-            tempData.responseTime_s = NaN(1,10000);
-            pdata(thisStaircase) = tempData;
-        end
+        totalTrials = experiment.nSpatialFrequencies*experiment.nTemporalFrequencies*experiment.nTrialsPerFrequency;
+        data.response = NaN(1, totalTrials);
+        data.responseTime_s = NaN(1, totalTrials);
+        data.nResponseEvents = NaN(1, totalTrials);
+        data.responseEvents_s = cell(1, totalTrials);
+        pdata.response = NaN(1,experiment.nTrialsPerFrequency);
+        pdata.responseTime_s = NaN(1,experiment.nTrialsPerFrequency);
+        pdata.nResponseEvents = NaN(1,experiment.nTrialsPerFrequency);
+        pdata.responseEvents_s = cell(1,experiment.nTrialsPerFrequency);
         
         % Determine trial order
         participant.currentPracticeTrial = 1;
         participant.currentTrial = 1;
-        participant.pTrialOrder = randomiseTrialOrder(staircase.trialsPerStaircase, staircase.nPerFrequency);
-        participant.trialOrder = randomiseTrialOrder(staircase.trialsPerStaircase, [experiment.nSpatialFrequencies experiment.nTemporalFrequencies staircase.nPerFrequency], 1);
+        participant.trialOrder = randomiseTrialOrder(experiment.nTrialsPerFrequency, [experiment.nSpatialFrequencies experiment.nTemporalFrequencies], 1);
         participant.startTime = now;
         
         % Save data file
-        save(participant.dataFile, 'directory', 'participant', 'experiment', 'staircase', 'data', 'pdata');
+        save(participant.dataFile, 'directory', 'participant', 'experiment', 'data', 'pdata');
 
     end
 

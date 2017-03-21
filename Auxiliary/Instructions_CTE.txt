@@ -1,14 +1,10 @@
-This test measures your ability to see faint patterns.
-
-On each trial, a striped pattern will appear\nat the top, bottom, left or right of the screen.
-
-Your task is to indicate where the pattern appeared.
+This test measures your ability to see faint patterns.\n\nOn each trial,\na striped pattern\nwill very gradually appear on the screen.
 ***
-You should stare directly at the marker in the very centre of the screen.\nTry not to move your eyes throughout the trial.
+You should stare directly at the marker in the very centre of the screen.\n\nTry not to move your eyes or blink too much throughout the trial.
 ***
-After the pattern has appeared,\nyou should press the button on your response box\nthat corresponds to its location.\n\nFor example, if the pattern appears at the top of the screen,\nyou should press the top button.
+During the trial, the dot at the very centre of the marker\nmay gradually fade and then return to normal.\n\nYour task is to count how many times the dot does this during each trial.\n\nIt may do this several times, or not at all.
 ***
-Sometimes the pattern will be very difficult to see.\nIf you are unsure where it appeared, please make your best guess.
+After the pattern has disappeared,\na response screen will appear.\n\nYou should then press the button\nthat corresponds to the number of times the dot disappeared during that trial.\n\nFor example, if the dot disappeared twice,\nyou should press the button corresponding to '2',\nas indicated on the response screen.
 ***
 After you respond, you will hear feedback.
 ***
@@ -20,7 +16,7 @@ If you have any questions before you begin, please ask the experimenter now.
 
 Otherwise, we will now begin some practice trials.
 
-Please remember to keep your eyes fixed on the marker in the centre of the screen.
+Please remember to keep your eyes fixed on the marker in the centre of the screen,\nand try not to blink too much.
 ***
 The next block will be number 1 of %%%.
 ***
@@ -32,7 +28,7 @@ Otherwise, we will now begin the test.
 
 The next block will be number 1 of %%%.
 
-Please remember to keep your eyes fixed on the marker in the centre of the screen.
+Please remember to keep your eyes fixed on the marker in the centre of the screen,\nand try not to blink too much.
 ***
 Thank you.\nThis block of trials is complete.\nTake a short break if you'd like.
 

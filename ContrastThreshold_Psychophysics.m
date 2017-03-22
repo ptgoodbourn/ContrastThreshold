@@ -13,8 +13,8 @@
 close all;
 
 %% Commonly switched parameters
-display.dummyMode = 1;                      % Set to 1 to run without DATAPixx and skip sync tests
-equipment.dummyMode = 1;                    % Run with keyboard instead of RESPONSEPixx
+display.dummyMode = 0;                      % Set to 1 to run without DATAPixx and skip sync tests
+equipment.dummyMode = 0;                    % Run with keyboard instead of RESPONSEPixx
 
 experiment.skipInstructions = 1;
 experiment.skipPractice = 1;
@@ -37,10 +37,10 @@ display.gain = 0.898791;                                        % Gamma correcti
 display.bias = 0.138418;                                        % Gamma correction: Bias
 display.geometryCalibration = 'BVLCalibdata_1_1280_1024.mat';   % Filename for geometry calibration file in directory.calibration
 display.refreshRate_Hz = 100;                                   % Display refresh rate (Hz)
-display.spatialResolution_ppm = 4400;                           % Display spatial resolution (pixels per m)
+display.spatialResolution_ppm = 3521;                           % Display spatial resolution (pixels per m)
 display.viewingDistance_m = 1.0;                                % Viewing distance (m)
-display.width_m = 0.3;                                          % Width of the display (m)
-display.screenNo = min(Screen('Screens'));                      % Screen number
+display.width_m = 0.36;                                         % Width of the display (m)
+display.screenNo = max(Screen('Screens'));                      % Screen number
 display.backgroundVal = 0.5;                                    % Background luminance in range [0,1]
 
 %% Define other equipment parameters
@@ -52,7 +52,7 @@ equipment.centreIndex = 5;                  % Button index for 'centre' response
 
 equipment.waitForWhat = 2;                  % See waitForButtonPressRESPONSEPixx
 equipment.continueDelay_s = 5.0;            % Delay on instruction screen before allowed to press a button to continue
-equipment.continueButtonIntensity = 0.5;    % Light intensity for 'continue' button during instructions
+equipment.continueButtonIntensity = 0.25;    % Light intensity for 'continue' button during instructions
 
 equipment.audioFreq = 48000;                    % Default audio sample rate
 equipment.audioChannels = 2;                    % Stereo
@@ -67,11 +67,11 @@ font.vSpacing = 1.3;            % Line spacing
 %% Define stimulus parameters
 stimulus.spatialFrequencies_cpd = [0.5 2.0 5.0 16.0];   % Spatial frequencies (c/dva)
 stimulus.gaussianSD_dva = 1.0;                          % SD of Gaussian window (dva)
-stimulus.gaussianTruncate_SD = 4;                       % Hard truncation of Gaussian window (SD)
-stimulus.eccentricity_dva = 4.0;                        % Eccentricity of stimulus centre (dva)
+stimulus.gaussianTruncate_SD = 3;                       % Hard truncation of Gaussian window (SD)
+stimulus.eccentricity_dva = 5.0;                        % Eccentricity of stimulus centre (dva)
 stimulus.carrierAngle_rad = pi*0.5;                     % Angle of grating carrier vector (rad)
 stimulus.positions_rad = pi*[0.0 1.5 1.0 0.5];          % Stimulus positions (on imaginary circle). Use this variable to set the number of alternatives.
-stimulus.fixationSubtense_dva = 0.4;                    % Subtense of outer segment of the fixation marker (dva)
+stimulus.fixationSubtense_dva = 0.3;                    % Subtense of outer segment of the fixation marker (dva)
 stimulus.fixationLineWidth_pix = 4;                     % Line width of fixation crosshairs (pixels)
 
 stimulus.temporalFrequencies_Hz = [2.0 8.0 20.0];   % Temporal frequencies (Hz)
@@ -296,9 +296,12 @@ stimulus.centres_y = tempy' + display.centre(2);
     for thisBlock = 1:experiment.nBlocks
         
         % Create procedural Gabors
-        [gaborId, gaborRect] = CreateProceduralGabor(display.ptbWindow, stimulus.textureSupport_pix, stimulus.textureSupport_pix, [], [], 1, 0.5);
-        allRects = CenterRectOnPointd(gaborRect,stimulus.centres_x,stimulus.centres_y);
-    
+        [sinId, sinRect] = CreateProceduralSineGrating(display.ptbWindow, stimulus.textureSupport_pix, stimulus.textureSupport_pix, [], ceil(stimulus.textureSupport_pix/2), 0.5);
+        allRects = CenterRectOnPointd(sinRect,stimulus.centres_x,stimulus.centres_y);
+        gaussMask = display.backgroundVal*ones(stimulus.textureSupport_pix,stimulus.textureSupport_pix,4);
+        gaussMask(:,:,4) = 1-makeGaussianBlob(stimulus.gaussianSD_pix, stimulus.textureSupport_pix);
+        gaussId = Screen('MakeTexture', display.ptbWindow, gaussMask, [], [], 2);
+        
         %% Start trial
         for thisTrial = 1:experiment.nTrialsPerBlock(thisBlock)
 
@@ -328,11 +331,13 @@ stimulus.centres_y = tempy' + display.centre(2);
             WaitSecs('UntilTime', fixTime + stimulus.fixationDuration_s);
             for thisFrame = 1:stimulus.presentationDuration_f
                 
-                Screen('DrawTexture', display.ptbWindow, gaborId, [], ...
+                Screen('DrawTexture', display.ptbWindow, sinId, [], ...
                     allRects(thisPosition,:), stimulus.carrierAngle_deg, ...
-                    [], [], [0 0 0 1], [], kPsychDontDoRotation, ...
+                    [], [], [], [], [],...
                     [thisSpatialPhase, thisSpatialFrequency, ...
-                    stimulus.gaussianSD_pix, thisEnvelope(thisFrame), 1, 0, 0, 0]);
+                    thisEnvelope(thisFrame), 0]);
+                Screen('DrawTexture', display.ptbWindow, gaussId, [],...
+                    allRects(thisPosition,:));
                 drawFixationElements(display.ptbWindow, fixationElements);
                 Screen('DrawingFinished', display.ptbWindow);
                 Screen('Flip', display.ptbWindow);

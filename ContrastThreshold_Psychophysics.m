@@ -275,8 +275,9 @@ stimulus.centres_y = tempy' + display.centre(2);
 
         end
         
-        save(participant.dataFile, 'directory', 'participant', 'experiment', 'staircase', 'pdata', 'data');
-        
+        save(participant.dataFile, 'directory', 'participant', 'experiment',...
+                    'display', 'equipment', 'stimulus', 'staircase', 'pdata', 'data');     
+                
     end
  
     %% Show intermediate instructions
@@ -375,7 +376,8 @@ stimulus.centres_y = tempy' + display.centre(2);
         %% End block
 
         % Save staircase data
-        save(participant.dataFile, 'directory', 'participant', 'experiment', 'staircase', 'pdata', 'data');
+        save(participant.dataFile, 'directory', 'participant', 'experiment',...
+            'display', 'equipment', 'stimulus', 'staircase', 'pdata', 'data');
 
         % Show instructions
         if thisBlock < experiment.nBlocks

@@ -16,8 +16,8 @@ close all;
 display.dummyMode = 0;                      % Set to 1 to run without DATAPixx and skip sync tests
 equipment.dummyMode = 0;                    % Run with keyboard instead of RESPONSEPixx
 
-experiment.skipInstructions = 1;
-experiment.skipPractice = 1;
+experiment.skipInstructions = 0;
+experiment.skipPractice = 0;
 
 %% Set directories
 directory.base = '/Users/experimentalmode/Documents/MATLAB/ContrastThreshold/';
@@ -122,6 +122,7 @@ stimulus.textureSupport_pix = ceil(stimulus.gaussianTruncate_pix * 2) + 1;      
 stimulus.presentationDuration_f = stimulus.presentationDuration_s * display.refreshRate_Hz;         % Calculate duration of presentation (frames)
 stimulus.fixationSubtense_pix = stimulus.fixationSubtense_dva*display.spatialResolution_ppd;        % Calculate subtense of fixation (pixels)
 stimulus.carrierAngle_deg = rad2deg(stimulus.carrierAngle_rad);
+stimulus.gratingAngle_deg = round(stimulus.carrierAngle_deg-90);
 
 equipment.responseIndex = [equipment.rightIndex equipment.upIndex equipment.leftIndex equipment.downIndex];
 
@@ -295,13 +296,13 @@ stimulus.centres_y = tempy' + display.centre(2);
     %% Start experimental blocks
     for thisBlock = 1:experiment.nBlocks
         
-        % Create procedural Gabors
-        [sinId, sinRect] = CreateProceduralSineGrating(display.ptbWindow, stimulus.textureSupport_pix, stimulus.textureSupport_pix, [], ceil(stimulus.textureSupport_pix/2), 0.5);
-        allRects = CenterRectOnPointd(sinRect,stimulus.centres_x,stimulus.centres_y);
+        % Create Gaussian mask and rects
         gaussMask = display.backgroundVal*ones(stimulus.textureSupport_pix,stimulus.textureSupport_pix,4);
         gaussMask(:,:,4) = 1-makeGaussianBlob(stimulus.gaussianSD_pix, stimulus.textureSupport_pix);
         gaussId = Screen('MakeTexture', display.ptbWindow, gaussMask, [], [], 2);
-        
+        gaussRect = Screen('Rect', gaussId);
+        allRects = CenterRectOnPointd(gaussRect,stimulus.centres_x,stimulus.centres_y);
+
         %% Start trial
         for thisTrial = 1:experiment.nTrialsPerBlock(thisBlock)
 
@@ -314,8 +315,13 @@ stimulus.centres_y = tempy' + display.centre(2);
             thisContrast = min([1.0 10^QuestQuantile(data(thisSpatialFrequencyNo,thisTemporalFrequencyNo,thisStaircase))]);
             
             % Randomise spatial phase and position of target
-            thisSpatialPhase = 360*rand;
+            thisSpatialPhase = 2*pi*rand;
             thisPosition = randi(experiment.nAFC);
+            
+            % Create the grating texture
+            sinVector = 0.5*(sin(thisSpatialFrequency*((2*pi*(0:(stimulus.textureSupport_pix-1)))+thisSpatialPhase))+1);
+            sinMatrix = repmat(sinVector',1,stimulus.textureSupport_pix);
+            sinId = Screen('MakeTexture', display.ptbWindow, sinMatrix, [], [], 2);
             
             % Create temporal envelope
             [thisEnvelope, thisTemporalPhase] = makeTemporalEnvelope(thisTemporalFrequency, stimulus, display);
@@ -331,10 +337,8 @@ stimulus.centres_y = tempy' + display.centre(2);
             WaitSecs('UntilTime', fixTime + stimulus.fixationDuration_s);
             for thisFrame = 1:stimulus.presentationDuration_f
                 Screen('DrawTexture', display.ptbWindow, sinId, [], ...
-                    allRects(thisPosition,:), stimulus.carrierAngle_deg, ...
-                    [], [], [], [], [],...
-                    [thisSpatialPhase, thisSpatialFrequency, ...
-                    thisEnvelope(thisFrame), 0]);
+                    allRects(thisPosition,:), stimulus.gratingAngle_deg, ...
+                    [], thisEnvelope(thisFrame));
                 Screen('DrawTexture', display.ptbWindow, gaussId, [],...
                     allRects(thisPosition,:));
                 drawFixationElements(display.ptbWindow, fixationElements);
@@ -375,7 +379,7 @@ stimulus.centres_y = tempy' + display.centre(2);
 
         % Show instructions
         if thisBlock < experiment.nBlocks
-            [~, ny, ~, flipTime] = showInstructions(display.ptbWindow, instructionArray, 11, {num2str(thisBlock), num2str(experiment.nBlocks)}, font, 2);    % Show the page
+            [~, ny, ~, flipTime] = showInstructions(display.ptbWindow, instructionArray, 11, {num2str(thisBlock+1), num2str(experiment.nBlocks)}, font, 2);    % Show the page
             appendInstructionsContinue(display.ptbWindow, 'the centre button', font, ny+100, 1);                            % Append the continue message without flipping
             [rB,rT,startT,stopT] = waitForButtonPressRESPONSEPixx(equipment.centreIndex, equipment.waitForWhat, ...
                 1, flipTime+equipment.continueDelay_s, equipment.continueButtonIntensity, equipment, display);              % Flip and wait for button press

@@ -297,7 +297,6 @@ stimulus.centres_y = tempy' + display.centre(2);
     %% Start experimental blocks
     for thisBlock = 1:experiment.nBlocks
         
-        % Create Gaussian mask and rects
         gaussMask = display.backgroundVal*ones(stimulus.textureSupport_pix,stimulus.textureSupport_pix,4);
         gaussMask(:,:,4) = 1-makeGaussianBlob(stimulus.gaussianSD_pix, stimulus.textureSupport_pix);
         gaussId = Screen('MakeTexture', display.ptbWindow, gaussMask, [], [], 2);

@@ -65,13 +65,13 @@ font.textStyle = 0;             % Normal
 font.vSpacing = 1.3;            % Line spacing
 
 %% Define stimulus parameters
-stimulus.spatialFrequencies_cpd = [0.5 2.0 5.0 16.0];   % Spatial frequencies (c/dva)
-stimulus.gaussianSD_dva = 1.0;                          % SD of Gaussian window (dva)
-stimulus.gaussianTruncate_SD = 3;                       % Hard truncation of Gaussian window (SD)
-stimulus.eccentricity_dva = 5.0;                        % Eccentricity of stimulus centre (dva)
+stimulus.spatialFrequencies_cpd = [0.5 2.0 7.5 15.0];   % Spatial frequencies (c/dva)
+stimulus.gaussianSD_dva = 0.5;                          % SD of Gaussian window (dva)
+stimulus.gaussianTruncate_SD = 6;                       % Hard truncation of Gaussian window (SD)
+stimulus.eccentricity_dva = 4.0;                        % Eccentricity of stimulus centre (dva)
 stimulus.carrierAngle_rad = pi*0.5;                     % Angle of grating carrier vector (rad)
 stimulus.positions_rad = pi*[0.0 1.5 1.0 0.5];          % Stimulus positions (on imaginary circle). Use this variable to set the number of alternatives.
-stimulus.fixationSubtense_dva = 0.3;                    % Subtense of outer segment of the fixation marker (dva)
+stimulus.fixationSubtense_dva = 0.2;                    % Subtense of outer segment of the fixation marker (dva)
 stimulus.fixationLineWidth_pix = 4;                     % Line width of fixation crosshairs (pixels)
 
 stimulus.temporalFrequencies_Hz = [2.0 8.0 20.0];   % Temporal frequencies (Hz)
@@ -82,13 +82,16 @@ stimulus.noiseExponent = 0;                         % Noise exponent for practic
 stimulus.xyNoise = 0;                               % Should practice stimulus noise be x-y-t (1) or just y-t (0)?
 
 %% Define staircase parameters
-staircase.thresholdGuess = log10(0.2);              % (Log of) Initial threshold guess
-staircase.thresholdGuessSD = 1.0;                   % (Log of) Initial threshold guess standard deviation
-staircase.nPerFrequency = 2;                        % Number of staircases per spatiotemporal frequency
-staircase.trialsPerStaircase = 30;                  % Number of trials per staircase
-staircase.delta = 0.1;                              % Staircase lapse rate
-staircase.beta = 3.5;                               % Slope of psychometric function
-staircase.pThreshold = .72;                         % Percent correct defined as threshold
+staircase.thresholdGuesses = log10([0.01 0.01 0.01; ...
+                                    0.01 0.01 0.05; ...
+                                    0.01 0.01 0.10; ...
+                                    0.25 0.25 0.50]);   % (Log of) Initial threshold guess
+staircase.thresholdGuessSD = 1.0;                       % (Log of) Initial threshold guess standard deviation
+staircase.nPerFrequency = 2;                            % Number of staircases per spatiotemporal frequency
+staircase.trialsPerStaircase = 30;                      % Number of trials per staircase
+staircase.delta = 0.1;                                  % Staircase lapse rate
+staircase.beta = 3.5;                                   % Slope of psychometric function
+staircase.pThreshold = .72;                             % Percent correct defined as threshold
 
 %% Calculate parameters from defined parameters
 experiment.nSpatialFrequencies = numel(stimulus.spatialFrequencies_cpd);                                            % Number of spatial frequencies in the experiment

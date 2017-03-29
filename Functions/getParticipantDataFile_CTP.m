@@ -46,11 +46,14 @@ function [ participant, data, pdata ] = getParticipantDataFile_CTP( directory, p
         load(participant.dataFile);
     else
         % If file doesn't exist, create it.
+        if isscalar(staircase.thresholdGuess)
+            staircase.thresholdGuess = repmat(staircase.thresholdGuess,experiment.nSpatialFrequencies,experiment.nTemporalFrequencies);
+        end
 
         for thisSpatialFrequency = 1:experiment.nSpatialFrequencies
             for thisTemporalFrequency = 1:experiment.nTemporalFrequencies
                 for thisStaircase = 1:staircase.nPerFrequency
-                    tempData = QuestCreate(staircase.thresholdGuess, staircase.thresholdGuessSD, staircase.pThreshold, staircase.beta, staircase.delta, staircase.gamma); %#ok<*AGROW>
+                    tempData = QuestCreate(staircase.thresholdGuess(thisSpatialFrequency,thisTemporalFrequency), staircase.thresholdGuessSD, staircase.pThreshold, staircase.beta, staircase.delta, staircase.gamma); %#ok<*AGROW>
                     tempData.stimulusLocation = NaN(1,10000);
                     tempData.responseLocation = NaN(1,10000);
                     tempData.responseTime_s = NaN(1,10000);

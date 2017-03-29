@@ -1,6 +1,6 @@
 addpath(genpath('/Users/experimentalmode/Documents/MATLAB/Toolboxes/PsychMods/'));
 cd('/Users/experimentalmode/Documents/MATLAB/ContrastThreshold/Data_CTP');
-fileName = 'DSFSF_Data_CTP.mat';
+fileName = 'JC001_Data_CTP.mat';
 
 stimulus.spatialFrequencies_cpd = [0.5 2.0 5.0 16.0];   % Spatial frequencies (c/dva)
 stimulus.temporalFrequencies_Hz = [2.0 8.0 20.0];       % Temporal frequencies (Hz)
@@ -11,11 +11,12 @@ nTemporalFrequencies = numel(stimulus.temporalFrequencies_Hz);
 load(fileName);
 
 figure('Color','White');
-staircaseAxis = [-1 30 -3 0];
+staircaseAxis = [-1 30 -5 0];
 sensAxis_Abs = [0 4 0.5 4.5 0 NaN];
 sensView_Abs = [-45 50];
 sensAxis_Rel = [0 4 0.5 4.5 0 5];
 sensView_Rel = [-45 50];
+staircaseColourOrder = {'r','b'};
 
 gridRows = 5;
 gridCols = 6;
@@ -34,7 +35,14 @@ subplot(gridRows, gridCols, bBandStaircaseGridPos);
 hold on;
 
 for thisStaircase = 1:2
-    plot(pdata(thisStaircase).intensity(1:pdata(thisStaircase).trialCount));
+    theseIntensities = pdata(thisStaircase).intensity(1:pdata(thisStaircase).trialCount);
+    theseCorrect = pdata(thisStaircase).response(1:pdata(thisStaircase).trialCount);
+    correctTrial = find(theseCorrect);
+    incorrectTrial = find(~theseCorrect);
+    plot(theseIntensities,[staircaseColourOrder{thisStaircase} '-']);
+    plot(correctTrial,theseIntensities(correctTrial),[staircaseColourOrder{thisStaircase} '.']);
+    plot(incorrectTrial,theseIntensities(incorrectTrial),[staircaseColourOrder{thisStaircase} 'x']);
+
 end
 
 thisQ1 = pdata(1);
@@ -60,7 +68,7 @@ broadBandSensitivity = s;
 broadBandLogThreshold = logt;
 broadBandCIs = ci;
 
-plot([0 nQ1],logt*ones(1,2),'r:');
+plot([0 nQ1],logt*ones(1,2),'k:');
 axis square;
 axis(staircaseAxis);
 title('Broadband');
@@ -77,7 +85,13 @@ for thisSpatialFrequency = 1:4
         hold on;
         
         for thisStaircase = 1:2
-            plot(data(thisSpatialFrequency,thisTemporalFrequency,thisStaircase).intensity(1:data(thisSpatialFrequency,thisTemporalFrequency,thisStaircase).trialCount));
+            theseIntensities = data(thisSpatialFrequency,thisTemporalFrequency,thisStaircase).intensity(1:data(thisSpatialFrequency,thisTemporalFrequency,thisStaircase).trialCount);
+            theseCorrect = data(thisSpatialFrequency,thisTemporalFrequency,thisStaircase).response(1:data(thisSpatialFrequency,thisTemporalFrequency,thisStaircase).trialCount);
+            correctTrial = find(theseCorrect);
+            incorrectTrial = find(~theseCorrect);
+            plot(theseIntensities,[staircaseColourOrder{thisStaircase} '-']);
+            plot(correctTrial,theseIntensities(correctTrial),[staircaseColourOrder{thisStaircase} '.']);
+            plot(incorrectTrial,theseIntensities(incorrectTrial),[staircaseColourOrder{thisStaircase} 'x']);
         end
         
         thisQ1 = data(thisSpatialFrequency,thisTemporalFrequency,1);
@@ -103,7 +117,7 @@ for thisSpatialFrequency = 1:4
         allLogThresholds(thisSpatialFrequency,thisTemporalFrequency) = logt;
         allCIs(thisSpatialFrequency,thisTemporalFrequency,:) = ci;
         
-        plot([0 nQ1],logt*ones(1,2),'r:');
+        plot([0 nQ1],logt*ones(1,2),'k:');
         axis square;
         axis(staircaseAxis);
         thisTitle = [num2str(stimulus.spatialFrequencies_cpd(thisSpatialFrequency),'%.1f')...
@@ -114,15 +128,16 @@ for thisSpatialFrequency = 1:4
 end
 
 % Summary bar plot
+allSensitivities = log10(allSensitivities);
 subplot(gridRows,gridCols,sensGridPos_Abs);
 sensPlot = bar3(allSensitivities, barWidth);
 maxSens = max(allSensitivities(:));
-maxAxis = 100*ceil(maxSens/100);
+maxAxis = ceil(maxSens);
 sensAxis_Abs(6) = maxAxis;
 axis(sensAxis_Abs);
 aX = gca;
 aX.View = sensView_Abs;
-zlabel('Sensitivity');
+zlabel('log_{10}(Sensitivity)');
 ylabel('Fs (cpd)');
 xlabel('Ft (Hz)');
 xticklabels({'2','8','20'});
